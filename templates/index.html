@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Gorkon Downloader{% endblock %}
+{% block content %}
+<h1>Gorkon Downloader</h1>
+<p>Youtube | Vimeo | Blip.tv | Soundcloud</p>
+<form method="POST" action="{{ url_for('index') }}">
+    {{ form.csrf_token }}
+    {% for field in form.errors %}
+        {% for error in form.errors[field] %}
+        <ul class="errors">
+            <li><strong>Error!</strong> {{error}}</li>
+        </ul>
+        {% endfor %}
+    {% endfor %}
+    {{ form.video_url(placeholder=form.video_url.label.text)|safe }}
+    <input type="submit" value="Download" />
+</form>
+{% if task_id %}
+<br/>
+<span><img src="/static/img/loading.gif" /> Wow, hold on!</span> <a href="/get/{{ task_id }}">Save file {{ task_id }}</a>
+<!--<span class="success">There you go!</span> <a href="{{ url }}" download="{{ url }}">Save file</a>-->
+{% endif %}
+{% endblock %}

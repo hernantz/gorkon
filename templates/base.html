@@ -1,0 +1,33 @@
+<!doctype html>
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{% endblock %}</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div id="container">
+        <div id="main" role="main">
+          <div class="new">
+             {# comment #}
+                {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-block alert-error">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            {# endcomment #}
+            {% block content %}{% endblock %}
+          </div>       
+        </div>
+        <footer>
+            {% block footer %}{% endblock %}
+        </footer>
+    </div>
+</body>
+</html>
