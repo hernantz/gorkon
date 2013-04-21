@@ -1,0 +1,34 @@
+body{
+    display: flex;
+    display: -moz-flex;
+    display: -webkit-flex;
+    -moz-flex-align: center;
+    -webkit-flex-align: center;
+    flex-align: center;
+    -moz-flex-pack: center;
+    -webkit-flex-pack: center;
+    flex-pack: center;
+}
+
+
+#container {
+    width: 450px;
+    margin: 0 auto;
+}
+
+
+.errors {
+    padding: 0px;
+    list-style: none;
+}
+
+.errors li {
+    background-color: red;
+    color: white;
+    display: inline-block;
+}
+
+.success {
+    background: green;
+    color: white
+}
