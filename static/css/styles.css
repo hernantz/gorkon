@@ -32,3 +32,7 @@ body{
     background: green;
     color: white
 }
+
+.failure {
+    background: orange;
+}
