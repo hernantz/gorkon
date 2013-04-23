@@ -1,5 +1,4 @@
-from celery import Celery
-import requests
+from celery import Celery, current_task
 import subprocess
 
 
@@ -8,12 +7,8 @@ celery.config_from_object('celeryconfig')
 
 
 @celery.task
-def download(video_url):
+def download(video_url, task_id=None):
     """Retrieve the file from the url"""
-    subprocess.check_output(['youtube-dl', video_url, '--output', 'files/%(title)s.%(ext)s'])
-
-
-@celery.task
-def get_data(url):
-    """Retrieve some data from file"""
-    r = requests.get(url)
+    destdir = 'files/{}/%(title)s.%(ext)s'.format(download.request.id)
+    params = ['youtube-dl', video_url, '--output', destdir]
+    subprocess.check_output(params)
