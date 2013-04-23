@@ -12,12 +12,25 @@
         </ul>
         {% endfor %}
     {% endfor %}
-    {{ form.video_url(placeholder=form.video_url.label.text)|safe }}
+    {{ form.video_url(placeholder=form.video_url.label.text, autofocus=True)|safe }}
     <input type="submit" value="Download" />
 </form>
-{% if task_id %}
-<br/>
-<span><img src="/static/img/loading.gif" /> Wow, hold on!</span> <a href="/get/{{ task_id }}">Save file {{ task_id }}</a>
-<!--<span class="success">There you go!</span> <a href="{{ url }}" download="{{ url }}">Save file</a>-->
+{% if task %}
+    <script type='x-application/json' id='task-info'>{ "task_id": "{{ task.id }}" }</script>
+    <div id='task'>
+        <br/>
+        <span>
+            <img src="/static/img/loading.gif" /> Wow, hold on!
+        </span>
+    </div>
+    {% raw %}
+    <script type='text/x-handlebars-template' id='completed-template'>
+        <br/>
+        <span class="{{class}}">{{message}}</span>
+        {{#if model.succeded}}
+        <a href="{{link}}">Click to download</a>
+        {{/if}}
+    </script>
+    {% endraw %}
 {% endif %}
 {% endblock %}
