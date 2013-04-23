@@ -22,7 +22,7 @@ def redis():
 
 @task
 def celery():
-    local('celery -A tasks worker')
+    local('celery -A tasks worker --loglevel=debug')
 
 
 @task
