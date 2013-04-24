@@ -12,7 +12,7 @@ def start():
 @task
 def gunicorn():
     """Starts gunicorn"""
-    local('gunicorn main:app', capture=False)
+    local('gunicorn --config gunicornconfig.py main:app', capture=False)
 
 
 @task
