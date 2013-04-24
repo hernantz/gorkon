@@ -8,6 +8,3 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 SECRET_KEY = os.urandom(20)
 
 DEBUG = True
-
-# X-Sendfile feature for files sent with send_file()
-#USE_X_SENDFILE = True
