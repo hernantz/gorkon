@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, send_file, \
                   jsonify, url_for, redirect, session, abort
 from forms import DownloadForm
-from tasks import download
+from tasks import download, delete
 from glob import glob
 import os
 from redis_session import RedisSessionInterface
@@ -34,9 +34,14 @@ app.config.from_object('config')
 def index():
     form = DownloadForm(request.form)
     task = getnpop('task')
+
     if request.method == 'POST' and form.validate_on_submit():
-        session['task'] = download.delay(form.video_url.data)
+        dl_task = download.delay(form.video_url.data)
+        session['task'] = dl_task
+        # schedule file removal in 30 min
+        delete.apply_async((dl_task.id,), countdown=1800)
         return redirect(url_for('index'))
+
     return render_template('index.html', form=form, task=task)
 
 
