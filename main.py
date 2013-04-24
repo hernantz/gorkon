@@ -1,21 +1,22 @@
 from flask import Flask, render_template, request, send_file, \
-                  jsonify, url_for, redirect, session, flash
+                  jsonify, url_for, redirect, session, abort
 from forms import DownloadForm
 from tasks import download
 from glob import glob
+import os
 from redis_session import RedisSessionInterface
 
 
 def file2dl(task_id):
     """
     Check that the task_id's file exists.
-    Returns: file location or None
+    Returns: file's name and location or 404 Not Found HTTP Response
     """
     d = 'files/{}/*'.format(task_id)
     try:
-       return glob(d)[0]
+        return os.path.basename(glob(d)[0]), glob(d)[0]
     except IndexError:
-        return None
+        abort(404)
 
 
 def getnpop(var):
@@ -48,7 +49,11 @@ def check(task_id=None):
 
 @app.route('/download/<task_id>')
 def dl(task_id=None):
-    return send_file(file2dl(task_id))
+    filename, path = file2dl(task_id)  # Get the filename and dir for the requested file
+    response = send_file(path)  # Get some boilerplate headers from send_file()
+    response.headers['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
+    response.headers['X-Accel-Redirect']= '/files/{0}/{1}'.format(task_id, filename)
+    return response
 
 
 @app.errorhandler(500)
