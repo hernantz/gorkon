@@ -1,4 +1,3 @@
-======
 GORKON
 ======
 ![Gorkon](http://fc09.deviantart.net/fs4/i/2004/221/b/7/Orc_Shaman.jpg)
@@ -9,8 +8,7 @@ a youtube|vimeo|soundcloud|blip.tv link, will download the media file and
 optionally convert the output to other format.
 
 
-TODO
-====
+## TODO
 * TESTS!!!1.
 * Automated deployment.
 * Use FlexBox for fun.
@@ -18,5 +16,5 @@ TODO
 * Use celery [chains][chains]. Did not work when [tried][stackoverflow].
 
 
-[chains]: https://github.com/requirejs/text "Celery chains documentation"
+[chains]: http://docs.celeryproject.org/en/latest/userguide/canvas.html#chains "Celery chains documentation"
 [stackoverflow]: http://stackoverflow.com/questions/16306175/get-progress-from-async-python-celery-chain-by-chain-id "Get progress from async python celery chain by chain id"
