@@ -1,4 +1,5 @@
-from fabric.api import task, local, lcd
+from fabric.api import task, local, lcd, sudo
+import os
 
 
 @task
@@ -38,5 +39,32 @@ def install_redis():
 
 
 @task
+def install_nginx():
+    sudo('apt-get install nginx')
+
+
+@task
+def start_server():
+    sudo('service nginx restart')
+
+
+@task
+def reload_server():
+    sudo('service nginx reload')
+
+
+@task
+def enable_site():
+    nginxconf_path = os.path.abspath('nginx.conf')
+    sudo('ln -s {0} /etc/nginx/sites-enabled/{1}'.format(nginxconf_path, 'gorkon.conf'))
+    reload_server()
+
+
+@task
+def disable_site():
+    sudo('rm /etc/nginx/sites-enabled/{}'.format('nginx.conf'))
+    reload_server()
+
+
 def deploy():
     pass

@@ -1,18 +1,20 @@
 from flask import Flask, render_template, request, send_file, \
-                  jsonify, url_for, redirect, session, abort
+    jsonify, url_for, redirect, session, abort
 from forms import DownloadForm
-from tasks import download, delete
+from tasks import celery, download, delete, convert
 from glob import glob
-import os
 from redis_session import RedisSessionInterface
+from celery import chain
+from uuid import uuid1
+import os
 
 
-def file2dl(task_id):
+def file2dl(folder):
     """
-    Check that the task_id's file exists.
+    Check that the folder exists.
     Returns: file's name and location or 404 Not Found HTTP Response
     """
-    d = 'files/{}/*'.format(task_id)
+    d = 'files/{}/*'.format(folder)
     try:
         return os.path.basename(glob(d)[0]), glob(d)[0]
     except IndexError:
@@ -22,7 +24,7 @@ def file2dl(task_id):
 def getnpop(var):
     """Retrieve var from session and remove it."""
     if var in session:
-       return session.pop(var)
+        return session.pop(var)
 
 
 app = Flask(__name__)
@@ -33,31 +35,53 @@ app.config.from_object('config')
 @app.route('/', methods=['GET', 'POST'])
 def index():
     form = DownloadForm(request.form)
-    task = getnpop('task')
+    task = getnpop('task')  # are we processing a task already?
 
     if request.method == 'POST' and form.validate_on_submit():
-        dl_task = download.delay(form.video_url.data)
-        session['task'] = dl_task
-        # schedule file removal in 30 min
-        delete.apply_async((dl_task.id,), countdown=1800)
+
+        folder = str(uuid1())  # folder where to save the file
+
+        # list of tasks to process
+        tasks = [download.s(folder, form.video_url.data)]
+
+        if form.convert.data in ('mp3', 'mp4'):
+            # schedule file convertion to mp3 or mp4
+            tasks.append(convert.s(form.convert.data))
+
+        # start the chain and save the id in session for later ajax polling
+        task_chain = chain(*tasks).apply_async()
+        session['task'] = { "folder": folder, "task_id": task_chain.id }
+
+        # schedule file removal in 30 min, whatever the result is
+        delete.s(folder).set(countdown=980).apply_async()
+
         return redirect(url_for('index'))
 
-    return render_template('index.html', form=form, task=task)
+    return render_template('index.html', form=form,
+                           task=task)
 
 
 @app.route('/check/<task_id>')
 def check(task_id=None):
-    result = download.AsyncResult(task_id)
-    return jsonify(id=task_id, status=result.status,
-                   link=url_for('dl', task_id=task_id))
+    """
+    Given a task id, retrieve it's status
+    and return a json response
+    """
+    task_chain = celery.AsyncResult(task_id)
+    return jsonify(id=task_id, status=task_chain.status)
 
 
-@app.route('/download/<task_id>')
-def dl(task_id=None):
-    filename, path = file2dl(task_id)  # Get the filename and dir for the requested file
-    response = send_file(path)  # Get some boilerplate headers from send_file()
-    response.headers['Content-Disposition'] = 'attachment; filename="{}"'.format(filename)
-    response.headers['X-Accel-Redirect']= '/files/{0}/{1}'.format(task_id, filename)
+@app.route('/download/<folder>')
+def dl(folder=None):
+    # Get the filename and dir for the requested file
+    filename, path = file2dl(folder)
+
+    # Get some boilerplate headers from send_file()
+    response = send_file(path)
+    content_disposition = 'attachment; filename="{}"'.format(filename)
+    response.headers['Content-Disposition'] = content_disposition
+    x_accel_redirect = '/files/{0}/{1}'.format(folder, filename)
+    response.headers['X-Accel-Redirect'] = x_accel_redirect
     return response
 
 

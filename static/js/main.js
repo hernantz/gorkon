@@ -22,12 +22,13 @@ require.config({
 
 require(['App'], function(App){
     $(function(){
-        var task_id = '',
+        var taskData = null,
             $task_info = $('#task-info');
+
         if ($task_info.length){
-            task_id = $.parseJSON($task_info.html()).task_id;
+            taskData = $.parseJSON($task_info.html()); 
         }
-        console.log('current task_id', task_id);
-        new App($('#task'), task_id);
+
+        new App($('#task'), taskData);
     });
 });

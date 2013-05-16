@@ -5,7 +5,7 @@ define(function(require) {
         Backbone = require('backbone'),
         Poller = require('backbone_poller');
 
-    return function($root_el, task_id) {
+    return function($root_el, taskData) {
  
         var template = function(tpl) {
             return Handlebars.compile($('#' + tpl + '-template').html());
@@ -33,30 +33,33 @@ define(function(require) {
                     'class': this.cssClass, 
                     'message': this.message, 
                     'model': this.model, 
-                    'link': this.model.get('link')
+                    'link': this.model.downloadLink()
                 });
             }
         });
 
         // Download View
         var DownloadView = Backbone.View.extend({
-            initialize: function(options){
-                this.model = options.model;
-                this.$el = options.$el;
-                this.model.on('change:status',  this.render, this);
-            },
-            render: function(){
-                // Render the Success/Failure view
-                this.$el.html(new CompletedView({model: this.model}).render())
-            }
+          initialize: function(options){
+            this.model = options.model;
+            this.$el = options.$el;
+            this.model.on('change:status',  this.render, this);
+          },
+          render: function(){
+            // Render the Success/Failure view
+            this.$el.html(new CompletedView({model: this.model}).render())
+          }
         });
 
         // Download Model 
         var DownloadModel = Backbone.Model.extend({
-            urlRoot: '/check/',
-            defaults: {id: '', link: '', status: 'PENDING'},
-            succeded: function() { return this.get('status') === 'SUCCESS'; },
-            initialize: function(options){ _.bindAll(this, 'succeded'); }
+          urlRoot: '/check/',
+          defaults: {id: '', folder: '', status: 'PENDING'},
+          succeded: function() { return this.get('status') === 'SUCCESS'; },
+          initialize: function(options){ _.bindAll(this, 'succeded'); },
+          downloadLink: function () {
+            return '/download/' + this.get('folder');
+          }
         });
 
         var options = {
@@ -68,7 +71,7 @@ define(function(require) {
             }
         };
         
-        var download = new DownloadModel({id: task_id});
+        var download = new DownloadModel(taskData);
         var view = new DownloadView({model: download, $el: $root_el});
         var poller = Poller.get(download, options);
 
@@ -83,8 +86,8 @@ define(function(require) {
             model.set('status', 'FAILURE');
         });
 
-        if (task_id) {
-            console.log('start poolling');
+        if (taskData) {
+            console.log('start poolling', taskData.id);
             poller.start();
         }
 

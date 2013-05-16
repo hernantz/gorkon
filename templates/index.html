@@ -5,18 +5,24 @@
 <p>Youtube | Vimeo | Blip.tv | Soundcloud</p>
 <form method="POST" action="{{ url_for('index') }}">
     {{ form.csrf_token }}
-    {% for field in form.errors %}
-        {% for error in form.errors[field] %}
-        <ul class="errors">
-            <li><strong>Error!</strong> {{error}}</li>
-        </ul>
-        {% endfor %}
+    {% for subfield in form.convert %}
+        <span>{{ subfield }} {{ subfield.label }}&nbsp;&nbsp;</span>
     {% endfor %}
-    {{ form.video_url(placeholder=form.video_url.label.text, autofocus=True)|safe }}
+   <br/>
+    {{ form.video_url(placeholder='Paste URL here', autofocus=True)|safe }}
     <input type="submit" value="Download" />
+    {% for field in form.errors %}
+      {% for error in form.errors[field] %}
+      <ul class="errors">
+          <li><strong>Error!</strong> {{error}}</li>
+      </ul>
+      {% endfor %}
+    {% endfor %}
 </form>
 {% if task %}
-    <script type='x-application/json' id='task-info'>{ "task_id": "{{ task.id }}" }</script>
+    <script type='x-application/json' id='task-info'>
+      { "id": "{{ task.task_id }}", "folder": "{{ task.folder }}" }
+    </script>
     <div id='task'>
         <br/>
         <span>
