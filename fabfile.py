@@ -1,70 +1,142 @@
-from fabric.api import task, local, lcd, sudo
+from fabric.api import task, sudo, run, prefix, env, cd, settings
+from fabric.utils import abort
+from fabric.contrib.files import upload_template, first
+from contextlib import contextmanager, nested
 import os
 
 
-@task
-def start():
-    """Starts the enviroment"""
-    redis()
-    celery()
-    gunicorn()
+try:
+    # include hosts envs
+    from fabhosts import localhost, staging, production
+except ImportError:
+    abort("No fabhosts.py found!")
+
+
+def once(s):
+    "Command_prefixes is a list of prefixes"
+    if s not in env.command_prefixes:
+        return s
+    return 'true'
+
+
+@contextmanager
+def vwrap():
+    """Activates virtualenvwrapper commands"""
+    # This is the location if installed via:
+    # apt-get install virtualenvwrapper
+    shfile = first('/etc/bash_completion.d/virtualenvwrapper',
+                   '/usr/local/bin/virtualenvwrapper.sh')
+    with prefix(once('source %s' % shfile)):
+        yield
+
+
+@contextmanager
+def virtualenv():
+    with nested(vwrap(), prefix(once('workon %s' % env.project_name))):
+        yield
+
+
+@contextmanager
+def cd_project_path():
+    """Cd one folder above the src folder"""
+    with cd(env.project_path):
+        yield
+
+
+@contextmanager
+def cd_src_path():
+    """Cd inside the src folder"""
+    with cd(env.src_path):
+        yield
 
 
 @task
-def gunicorn():
-    """Starts gunicorn"""
-    local('gunicorn --config gunicornconfig.py main:app', capture=False)
+def mkvirtualenv():
+    """Just create a virtual enviroment"""
+    if not os.path.isdir(env.virtualenv_dir):
+        with nested(vwrap(), settings(warn_only=True)):
+            run('mkvirtualenv %(project_name)s' % env)
 
 
-@task
-def redis():
-    local('redis-server')
-
-
-@task
-def celery():
-    local('celery -A tasks worker --loglevel=debug')
-
-
-@task
-def install_redis():
-    local('wget http://download.redis.io/redis-stable.tar.gz', capture=False)
-    local('tar xvzf redis-stable.tar.gz', capture=False)
-    with lcd('redis-stable'):
-        local('make', capture=False)
-        local('cp src/redis-server $VIRTUAL_ENV/bin/')
-        local('cp src/redis-cli $VIRTUAL_ENV/bin/')
-    local('rm -R redis-stable')
-    local('rm redis-stable.tar.gz')
-
-
-@task
-def install_nginx():
-    sudo('apt-get install nginx')
-
-
-@task
-def start_server():
-    sudo('service nginx restart')
-
-
-@task
-def reload_server():
+def reload_nginx():
     sudo('service nginx reload')
 
 
-@task
-def enable_site():
-    nginxconf_path = os.path.abspath('nginx.conf')
-    sudo('ln -s {0} /etc/nginx/sites-enabled/{1}'.format(nginxconf_path, 'gorkon.conf'))
-    reload_server()
+def reload_supervisord():
+    sudo('supervisorctl update gorkon:*')
+    sudo('supervisorctl restart gorkon:*')
+
+
+def _config(src, dst):
+    with cd_src_path():
+        upload_template(src, dst, context=env, use_sudo=True,
+                        use_jinja=True, backup=False)
+
+
+def config_redis():
+    _config('configfiles/redis.conf', '/etc/redis/gorkon.conf')
+
+
+def config_supervisord():
+    _config('configfiles/supervisor.conf', '/etc/supervisor/conf.d/gorkon.conf')
+
+
+def config_nginx_site():
+    _config('configfiles/nginx.conf', '/etc/nginx/sites-enabled/gorkon.conf')
 
 
 @task
-def disable_site():
-    sudo('rm /etc/nginx/sites-enabled/{}'.format('nginx.conf'))
-    reload_server()
+def install_requirements():
+    """Install requirements.txt packages using pip"""
+    with nested(virtualenv(), cd_src_path()):
+        run('pip install -r requirements.txt')
 
 
+def git_update():
+    # Clone the repo, and if it already exists ignore the error
+    if not os.path.isdir(env.src_path):
+        with cd_project_path():
+            run('git clone %(repo)s' % env)
+
+    # Fast-foward from origin master
+    with cd_src_path():
+        run('git pull origin master')
+
+
+def mkdirs():
+    """Creates the files dir"""
+    if not os.path.isdir(env.log_dir):
+        run('mkdir %(log_dir)s' % env)
+
+    if not os.path.isdir(os.path.join(env.src_path, 'files')):
+        with cd_src_path():
+            run('mkdir files')
+
+
+@task
+def cleanup():
+    """Clears logs and files dirs"""
+    with cd_src_path():
+        run('rm -rf files/*')
+
+    with cd(env.log_dir):
+        run('rm -rf ./*')
+
+
+@task
+def config():
+    """Set up nginx and supervisord files and reload services"""
+    config_supervisord()
+    config_redis()
+    config_nginx_site()
+    reload_nginx()
+    reload_supervisord()
+
+
+@task
 def deploy():
-    pass
+    mkvirtualenv()
+    git_update()
+    mkdirs()
+    install_requirements()
+    config()
