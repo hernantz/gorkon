@@ -1,6 +1,6 @@
 from fabric.api import task, sudo, run, prefix, env, cd, settings
 from fabric.utils import abort
-from fabric.contrib.files import upload_template, first
+from fabric.contrib.files import upload_template, first, exists
 from contextlib import contextmanager, nested
 import os
 
@@ -53,7 +53,7 @@ def cd_src_path():
 @task
 def mkvirtualenv():
     """Just create a virtual enviroment"""
-    if not os.path.isdir(env.virtualenv_dir):
+    if not exists(env.virtualenv_dir):
         with nested(vwrap(), settings(warn_only=True)):
             run('mkvirtualenv %(project_name)s' % env)
 
@@ -94,7 +94,7 @@ def install_requirements():
 
 def git_update():
     # Clone the repo, and if it already exists ignore the error
-    if not os.path.isdir(env.src_path):
+    if not exists(env.src_path):
         with cd_project_path():
             run('git clone %(repo)s' % env)
 
@@ -105,10 +105,10 @@ def git_update():
 
 def mkdirs():
     """Creates the files dir"""
-    if not os.path.isdir(env.log_dir):
+    if not exists(env.log_dir):
         run('mkdir %(log_dir)s' % env)
 
-    if not os.path.isdir(os.path.join(env.src_path, 'files')):
+    if not exists(os.path.join(env.src_path, 'files')):
         with cd_src_path():
             run('mkdir files')
 
