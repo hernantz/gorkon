@@ -23,8 +23,8 @@ For required users check fabhosts.py file.
 All enviroment users must exist and all system packages must be installed.
 
 **Installing required system wide packages**
-sudo apt-get update
-sudo apt-get install nginx python-pip gcc python-dev git virtualenvwrapper supervisor redis-server libav-tools
+* sudo apt-get update
+* sudo apt-get install nginx python-pip gcc python-dev git virtualenvwrapper supervisor redis-server libav-tools
 
 **Configuring fabric hosts**
 The fabhosts.py file must contain the localhost, staging and production tasks to set up their respective
