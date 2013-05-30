@@ -25,6 +25,7 @@ All enviroment users must exist and all system packages must be installed.
 **Installing required system wide packages**
 * sudo apt-get update
 * sudo apt-get install nginx python-pip gcc python-dev git virtualenvwrapper supervisor redis-server libav-tools
+* sudo apt-get install libavutil-extra-51 libavdevice-extra-53 libavformat-extra-53 libavfilter-extra-2
 
 **Configuring fabric hosts**
 The fabhosts.py file must contain the localhost, staging and production tasks to set up their respective
@@ -45,6 +46,8 @@ def localhost():
     env.log_dir = '%(src_path)s/logs/' % env
     env.virtualenv_dir = '/home/%(user)s/.virtualenvs/%(project_name)s' % env
 ```
+
+Make sure that nginx and supervisor services are running with `sudo service [program] status`
 
 [chains]: http://docs.celeryproject.org/en/latest/userguide/canvas.html#chains "Celery chains documentation"
 [stackoverflow]: http://stackoverflow.com/questions/16306175/get-progress-from-async-python-celery-chain-by-chain-id "Get progress from async python celery chain by chain id"
