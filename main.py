@@ -3,6 +3,7 @@ from flask import Flask, render_template, request, send_file, \
 from forms import DownloadForm
 from tasks import celery, download, delete, convert
 from glob import glob
+from redis import Redis
 from redis_session import RedisSessionInterface
 from celery import chain
 from uuid import uuid1
@@ -28,7 +29,8 @@ def getnpop(var):
 
 
 app = Flask(__name__)
-app.session_interface = RedisSessionInterface()
+redisconn = Redis(port=6380)
+app.session_interface = RedisSessionInterface(redisconn)
 app.config.from_object('config')
 
 
