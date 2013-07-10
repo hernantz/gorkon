@@ -55,7 +55,7 @@ def index():
         session['task'] = { "folder": folder, "task_id": task_chain.id }
 
         # schedule file removal in 30 min, whatever the result is
-        delete.s(folder).set(countdown=980).apply_async()
+        delete.s(folder).set(countdown=1800).apply_async()
 
         return redirect(url_for('index'))
 
