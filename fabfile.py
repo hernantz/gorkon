@@ -113,6 +113,12 @@ def mkdirs():
             run('mkdir files')
 
 
+def removepyc():
+    """Remove pyc files since they can keep old code alive"""
+    with cd_src_path():
+        run('find -name "*.pyc" -delete')
+
+
 @task
 def cleanup():
     """Clears logs and files dirs"""
@@ -139,4 +145,5 @@ def deploy():
     git_update()
     mkdirs()
     install_requirements()
+    removepyc()
     config()
