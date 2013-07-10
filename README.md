@@ -48,6 +48,8 @@ def localhost():
 ```
 
 Make sure that nginx and supervisor services are running with `sudo service [program] status`
+Also check that the folders specified in fabhosts.py exist
+
 
 [chains]: http://docs.celeryproject.org/en/latest/userguide/canvas.html#chains "Celery chains documentation"
 [stackoverflow]: http://stackoverflow.com/questions/16306175/get-progress-from-async-python-celery-chain-by-chain-id "Get progress from async python celery chain by chain id"
